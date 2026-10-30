@@ -2,7 +2,7 @@
 
 Uso:
     python -m desktop_host.main            (modo automático: ADB ou LAN)
-    python -m desktop_host.main --lan      (força escuta LAN 0.0.0.0)
+    python -m desktop_host.main --install-cable  (oferece a instalação do VB-Cable)
 
 Dashboard CLI ANSI conforme PRD §8.2. Encerrar com Ctrl+C.
 """
@@ -68,8 +68,9 @@ async def run(args):
             executable = 'adb'
         manager = adb_manager.AdbManager(executable)
         adb = await asyncio.to_thread(manager.poll)
-        # Listen on LAN in automatic mode so a later USB replug needs no rebind.
-        bind = '0.0.0.0'
+        # Bind local (D2-6): o celular alcança o host via adb reverse para o
+        # 127.0.0.1 do PC; replug re-aplica o reverse (manager.poll), sem rebind.
+        bind = '127.0.0.1'
         server = WsBridgeServer(chunk_source=lambda: capture.read_chunk(timeout=0),
                                 sink=sink, host=bind, stats=stats)
         await server.start()
