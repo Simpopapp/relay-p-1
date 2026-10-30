@@ -62,6 +62,17 @@ Entre o status registrado e o código, **não há divergências materiais**: tod
 3. **Baixa prioridade:** mover os imports de `adb_manager.py` para o topo; substituir `site._server.sockets[0]` por leitura da porta configurada; resolver o "configuráveis" do RF8 (toggle ou rewording do PRD).
 4. **Rastreabilidade:** o status stage-08 está legível e com números reais; manter o padrão nas próximas etapas.
 
+## Verificação pós-avaliação (2026-10-30, rodada de correções)
+
+As duas correções apontadas na avaliação foram aplicadas e conferidas no código pelo monitor:
+
+1. **Bind do host (D2-6) — corrigido.** `main.py` linhas 72–73 agora usam `bind = '127.0.0.1'` (com comentário explicando que o replug re-aplica o reverse sem rebind); `ws_server.py` tem `127.0.0.1` como default do parâmetro `host`. A única referência restante a `0.0.0.0` está em `network_server.py` (legado D1, opt-in via `bind_lan`), coerente com a regra do AGENTS.md de que o TCP legado é só para regressão. Recomendação 1 da avaliação: **resolvida**.
+2. **Copy do rodapé do cliente — corrigida.** `apexaudio/web_client/index.html` footer agora exibe "● Só o cabo. Sem instalar. Só ouvir." com a linha técnica `ABP / PCM LOSSLESS · APEXAUDIO 2`; o rodapé do site (`site-shell.tsx`) está coerente ("ApexAudio · Duas vias. Um cabo." + links /ajuda e Releases).
+
+**Gates re-executados após as correções:** Python `35/35 OK (20,6s)`; JS `11/11 OK, fail 0 (232ms)`. `/tmp/observability/build-errors.log` — entradas recentes "build OK". Nenhuma regressão introduzida.
+
+**Estado para a Fase 4:** sem blockers técnicos no escopo Fases 1–3. Blocker externo confirmado: repositório GitHub conectado (para CI/PyInstaller gerar o `ApexAudio.exe` e resolver a URL provisória de release no site).
+
 ## Evidências consultadas
 
 - `docs/planning/stages/stage-08-status.md`
