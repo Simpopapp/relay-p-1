@@ -16,10 +16,9 @@ if (!existsSync(src)) {
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
-cpSync(src, dest, { recursive: true, filter: (s) => !s.includes(`${src}${sep()}tests`) });
-
-function sep() {
-  return process.platform === "win32" ? "\\" : "/";
-}
+cpSync(src, dest, {
+  recursive: true,
+  filter: (s) => !s.replaceAll("\\", "/").includes("/tests"),
+});
 
 console.log(`[sync-web] ${src} -> ${dest}`);
