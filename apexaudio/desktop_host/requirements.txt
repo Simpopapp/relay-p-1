@@ -1,0 +1,6 @@
+# ApexAudio Host — dependências (Windows)
+# pyaudiowpatch expõe o WASAPI Loopback; sounddevice faz a injeção no VB-Cable.
+numpy>=1.26
+sounddevice>=0.4.6
+pyaudiowpatch>=0.2.12 ; sys_platform == "win32"
+pywin32>=306 ; sys_platform == "win32"
