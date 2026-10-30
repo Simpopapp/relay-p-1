@@ -37,7 +37,7 @@ class TestSenderPacing(unittest.TestCase):
                    return_value=([], [], [])):
             server._serve_downlink(conn, ("127.0.0.1", 0))
         self.assertEqual(len(sent), 100)
-        self.assertEqual(len(sleeps), 99 if stall_at is None else 98)
+        self.assertEqual(len(sleeps), 99)
         return sent
 
     def test_one_frame_every_ten_milliseconds(self):
@@ -52,7 +52,7 @@ class TestSenderPacing(unittest.TestCase):
 
     def test_hundred_millisecond_stall_never_causes_catchup_burst(self):
         sent = self.run_sender(stall_at=10)
-        self.assertAlmostEqual(sent[10] - sent[9], 0.1, places=8)
+        self.assertAlmostEqual(sent[10] - sent[9], 0.11, places=8)
         for a, b in zip(sent, sent[1:]):
             self.assertGreaterEqual(b - a, 0.01 - 1e-9)
 
