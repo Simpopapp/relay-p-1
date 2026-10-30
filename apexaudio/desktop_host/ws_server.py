@@ -12,7 +12,11 @@ class WsBridgeServer:
     def __init__(self, port=59900, web_dir=None, chunk_source=None, sink=None,
                  host='127.0.0.1', stats=None):
         self.port, self.host = port, host
-        self.web_dir = Path(web_dir) if web_dir is not None else Path(__file__).resolve().parents[1] / 'web_client'
+        if web_dir is None:
+            import sys
+            base = Path(getattr(sys, '_MEIPASS', '')) if getattr(sys, 'frozen', False) else Path(__file__).resolve().parents[1]
+            web_dir = base / 'web_client'
+        self.web_dir = Path(web_dir)
         self.chunk_source, self.sink = chunk_source, sink
         self.stats = stats or HostStats()
         self._clients = []
