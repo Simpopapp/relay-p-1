@@ -1,0 +1,51 @@
+name: Build ApexAudio.exe
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apexaudio/desktop_host/requirements.txt
+          pip install pyinstaller
+
+      - name: Testes do host
+        run: python -m unittest discover -s apexaudio/desktop_host/tests -t .
+
+      - name: Compilar ApexAudio.exe
+        run: >
+          pyinstaller --onefile --console --name ApexAudio
+          --paths .
+          --add-data "apexaudio/web_client;web_client"
+          --collect-submodules apexaudio.desktop_host
+          apexaudio/run_host.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ApexAudio-windows
+          path: dist/ApexAudio.exe
+
+      - name: Publicar na aba Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'ApexAudio (última versão)' }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          make_latest: true
+          files: dist/ApexAudio.exe
