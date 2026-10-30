@@ -1,33 +1,51 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SiteShell, DownloadButton } from "@/components/site/site-shell";
 
 export const Route = createFileRoute("/ajuda")({
-  head: () => ({
-    meta: [
-      { title: "Ajuda — ApexAudio" },
-      {
-        name: "description",
-        content: "Guia de instalação e solução de problemas do ApexAudio.",
-      },
-      { property: "og:title", content: "Ajuda — ApexAudio" },
-      {
-        property: "og:description",
-        content: "Guia de instalação e solução de problemas do ApexAudio.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: AjudaPage,
+  head: () => ({ meta: [
+    { title: "Ajuda ApexAudio — Do cabo à primeira conexão" },
+    { name: "description", content: "Aprenda a ativar a Depuração USB no Android, conectar o ApexAudio e escolher CABLE Output no Discord. Resolva dúvidas de áudio e segurança." },
+    { property: "og:title", content: "Ajuda ApexAudio — Conecte passo a passo" },
+    { property: "og:description", content: "Guia de Depuração USB, primeira conexão, microfone no Discord e solução de problemas do ApexAudio." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }), component: HelpPage,
 });
 
-function AjudaPage() {
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-serif text-3xl font-bold tracking-tight">Ajuda</h1>
-      <p className="text-muted-foreground mt-3 text-sm">
-        Guia completo em preparação — instale a Depuração USB, conecte o cabo e
-        escolha o CABLE Output como microfone.
-      </p>
+const sections = [
+  ["depuracao-usb", "01", "Depuração USB"],
+  ["primeira-conexao", "02", "Primeira conexão"],
+  ["discord", "03", "Microfone no Discord"],
+  ["problemas", "04", "Problemas comuns"],
+  ["antivirus", "05", "Antivírus e segurança"],
+];
+const problems = [
+  ["Celular não detectado", "Desbloqueie o celular e aceite a autorização de Depuração USB. Use um cabo que transfira dados (alguns só carregam) e teste outra porta USB. Se o aviso não aparecer, revogue as autorizações de Depuração USB nas opções do desenvolvedor e reconecte. Em alguns aparelhos, o Windows também precisa do driver USB oficial do fabricante."],
+  ["Conectou, mas não ouço nada", "Confira o volume de mídia do celular, o volume do Windows e se o programa está reproduzindo áudio. Verifique se o fone está conectado ao celular. Mantenha a página aberta e toque em Conectar: o navegador precisa desse toque para liberar o áudio."],
+  ["O Discord não recebe minha voz", "No Chrome, permita o uso do microfone para localhost. Confira se o microfone não está silenciado e se o ganho está acima de zero. No Discord, selecione CABLE Output, não CABLE Input. Se essa opção não existir, instale o VB-Cable pela oferta do executável e reinicie o Windows se o instalador solicitar."],
+  ["O áudio está atrasado ou cortando", "Mantenha o Chrome em primeiro plano, deixe a tela ligada e feche aplicativos pesados nos dois aparelhos. Desative temporariamente a economia de bateria para o Chrome e teste outra porta ou cabo. Fones Bluetooth acrescentam atraso; prefira um fone com fio ligado ao celular."],
+  ["A página não abre no celular", "Deixe o ApexAudio.exe aberto no PC e o cabo conectado. No Chrome do celular, digite http://localhost:59900. Esse endereço só funciona com o host ativo e o túnel USB configurado; não é um site público. Se não abrir, reconecte o cabo, confirme a autorização USB e confira as mensagens na janela do executável."],
+];
+
+function HelpPage() {
+  return <SiteShell>
+    <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+      <p className="font-mono text-xs uppercase tracking-widest text-primary">Manual de conexão / ApexAudio</p>
+      <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Do cabo ao primeiro som.</h1>
+      <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">A primeira vez tem um ajuste no Android. Depois, é abrir o ApexAudio, conectar o cabo e tocar em Conectar.</p>
+      <div className="mt-12 grid items-start gap-10 lg:grid-cols-[230px_1fr] lg:gap-16">
+        <aside className="lg:sticky lg:top-6"><nav aria-label="Neste guia" className="border-l border-border pl-5"><p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Neste guia</p><ul className="space-y-4">{sections.map(([id, number, label]) => <li key={id}><a href={`#${id}`} className="flex gap-3 text-sm hover:text-primary"><span className="font-mono text-primary">{number}</span>{label}</a></li>)}</ul></nav></aside>
+        <div className="min-w-0 space-y-14">
+          <section id="depuracao-usb" className="scroll-mt-6" aria-labelledby="usb-title"><h2 id="usb-title" className="border-b border-border pb-4 text-2xl font-semibold">01 / Ative a Depuração USB</h2><p className="mt-5 leading-relaxed text-muted-foreground">No Android 10 ou mais recente, os nomes dos menus variam conforme o fabricante. Faça isso apenas no seu próprio celular e autorize somente um computador em que confia.</p><ol className="mt-5 list-decimal space-y-4 pl-6 leading-relaxed marker:text-primary"><li>Abra <strong>Configurações → Sobre o telefone</strong>. Em alguns modelos, entre também em Informações do software.</li><li>Toque sete vezes em <strong>Número da versão</strong> (ou Número de compilação). Digite o PIN se solicitado. O Android avisa que as opções do desenvolvedor foram ativadas.</li><li>Volte às Configurações e procure <strong>Opções do desenvolvedor</strong>, às vezes dentro de Sistema.</li><li>Ative <strong>Depuração USB</strong> e confirme o aviso. Não é necessário ativar desbloqueio OEM nem depuração sem fio.</li><li>Conecte ao PC por um cabo de dados. Com a tela desbloqueada, aceite <strong>Permitir depuração USB?</strong>. Marque Sempre permitir deste computador apenas se ele for seu.</li></ol><p className="mt-5 border-l-2 border-primary pl-4 text-sm leading-relaxed text-muted-foreground">Não encontrou o menu? Use a busca das Configurações por “número da versão” ou consulte o guia oficial do fabricante. Você pode desligar a Depuração USB quando não estiver usando o ApexAudio.</p></section>
+          <section id="primeira-conexao" className="scroll-mt-6" aria-labelledby="connection-title"><h2 id="connection-title" className="border-b border-border pb-4 text-2xl font-semibold">02 / Faça a primeira conexão</h2><ol className="mt-5 list-decimal space-y-4 pl-6 leading-relaxed marker:text-primary"><li>Na última release do GitHub, baixe <strong>ApexAudio.exe</strong> no Windows 10/11 e abra o arquivo. Mantenha a janela do programa aberta durante o uso.</li><li>Se quiser usar o microfone do celular no PC, aceite a oferta de instalação do <strong>VB-Cable</strong>. O instalador pode pedir permissão de administrador e reinicialização. Sem ele, ainda é possível ouvir o PC no celular.</li><li>Conecte o cabo USB e autorize a depuração. O programa tenta abrir a página no Chrome do celular. Se isso não acontecer, abra <strong>http://localhost:59900</strong> no Chrome do celular.</li><li>Conecte seu fone ao celular, toque em <strong>Conectar</strong> e permita o microfone quando o Chrome perguntar. Comece com o volume baixo.</li></ol><p className="my-5 text-sm leading-relaxed text-muted-foreground">Deixe a página em primeiro plano. Se disponível no menu do Chrome, use “Adicionar à tela inicial” ou “Instalar aplicativo” para criar um atalho. Não há APK para instalar.</p><DownloadButton /></section>
+          <section id="discord" className="scroll-mt-6" aria-labelledby="discord-title"><h2 id="discord-title" className="border-b border-border pb-4 text-2xl font-semibold">03 / Escolha o microfone no Discord</h2><ol className="mt-5 list-decimal space-y-4 pl-6 leading-relaxed marker:text-primary"><li>Com a conexão ativa, abra <strong>Configurações de usuário → Voz e vídeo</strong> no Discord do PC.</li><li>Em <strong>Dispositivo de entrada</strong>, selecione <strong>CABLE Output (VB-Audio Virtual Cable)</strong>. O nome “Output” é mesmo o correto: é a saída do cabo virtual que o Discord recebe como microfone.</li><li>Em Dispositivo de saída, mantenha seus alto-falantes ou fones do Windows. <strong>Não selecione CABLE Input como saída</strong>, para não misturar o som do PC com sua voz.</li><li>Use o teste de microfone do Discord, fale no celular e ajuste o ganho na página. Em jogos, procure a mesma opção nas configurações de voz.</li></ol><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Se ouvir eco, use fones e encerre o teste de microfone antes de entrar na chamada. O teste reproduz sua própria voz.</p></section>
+          <section id="problemas" className="scroll-mt-6" aria-labelledby="problems-title"><h2 id="problems-title" className="border-b border-border pb-4 text-2xl font-semibold">04 / Problemas comuns</h2><Accordion type="single" collapsible className="mt-2">{problems.map(([title, answer], i) => <AccordionItem key={title} value={`problema-${i}`}><AccordionTrigger>{title}</AccordionTrigger><AccordionContent className="leading-relaxed text-muted-foreground">{answer}</AccordionContent></AccordionItem>)}</Accordion></section>
+          <section id="antivirus" className="scroll-mt-6" aria-labelledby="security-title"><h2 id="security-title" className="flex items-center gap-3 border-b border-border pb-4 text-2xl font-semibold"><ShieldCheck className="shrink-0 text-primary" aria-hidden="true" />05 / Antivírus e segurança</h2><p className="mt-5 leading-relaxed text-muted-foreground">O executável é empacotado com PyInstaller. Alguns antivírus podem sinalizar programas desse tipo, especialmente arquivos novos ou sem assinatura digital. Um alerta pode ser falso positivo, mas isso não garante que qualquer arquivo seja seguro.</p><ul className="mt-5 list-disc space-y-3 pl-6 leading-relaxed text-muted-foreground"><li>Baixe somente pela release oficial vinculada neste site. Não use cópias enviadas por terceiros.</li><li>Confira a origem do arquivo e os detalhes da detecção. Se houver hashes publicados na release, compare-os com o arquivo baixado.</li><li>Se houver alerta, interrompa a execução e envie o arquivo para análise ao fornecedor do antivírus. Não desative a proteção do Windows nem crie exclusões às cegas.</li><li>Um aviso de reputação do SmartScreen não é o mesmo que uma detecção de malware. Se não conseguir verificar a procedência, aguarde esclarecimento ou uma nova release.</li></ul></section>
+          <div className="border-t border-border pt-7"><Link to="/demo" className="inline-flex items-center gap-2 text-primary hover:underline">Conheça a interface na demonstração<ArrowRight className="size-4" aria-hidden="true" /></Link><p className="mt-2 text-sm text-muted-foreground">A demo é simulada: não exige cabo e não transporta seu áudio.</p></div>
+        </div>
+      </div>
     </div>
-  );
+  </SiteShell>;
 }
