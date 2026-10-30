@@ -16,9 +16,12 @@ if (!existsSync(src)) {
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
+const META = ["PRD-s2.md", "ROADMAP-s2.md", "package.json"];
 cpSync(src, dest, {
   recursive: true,
-  filter: (s) => !s.replaceAll("\\", "/").includes("/tests"),
+  filter: (s) =>
+    !s.replaceAll("\\", "/").includes("/tests") &&
+    !META.includes(s.split(/[\\/]/).pop()!),
 });
 
 console.log(`[sync-web] ${src} -> ${dest}`);
