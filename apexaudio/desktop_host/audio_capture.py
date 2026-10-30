@@ -46,10 +46,10 @@ def _wasapi_frames():
     with pw.PyAudio() as pa:
         try:
             wasapi_info = pa.get_host_api_info_by_type(pw.paWASAPI)
-        except OSError as exc:  # pragma: no cover - só acontece no Windows sem WASAPI
+            default_speakers = pa.get_device_info_by_index(
+                wasapi_info["defaultOutputDevice"])
+        except OSError as exc:
             raise CaptureUnavailable(str(exc)) from exc
-        default_speakers = pa.get_device_info_by_index(
-            wasapi_info["defaultOutputDevice"])
         if not default_speakers.get("isLoopbackDevice"):
             for loopback in pa.get_loopback_device_info_generator():
                 if default_speakers["name"] in loopback["name"]:
@@ -106,8 +106,8 @@ class LoopbackCapture:
                 if not self._running.is_set():
                     break
                 self._put(chunk)
-        except (CaptureUnavailable, ImportError):
-            # Missing optional WASAPI package is equivalent to unavailable capture.
+        except (CaptureUnavailable, ImportError, OSError):
+            # Missing devices/packages or a disconnected device must not kill the tunnel.
             self._silent = True
             self._silent_loop()
 
