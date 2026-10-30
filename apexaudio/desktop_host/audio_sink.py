@@ -80,3 +80,15 @@ class UplinkSink:
                 self._stream.close()
             finally:
                 self._stream = None
+
+
+def offer_cable_install(device_index, install=False, opener=None):
+    """Offer official download without installing privileged drivers automatically."""
+    if device_index is not None:
+        return ''
+    message = ('VB-Cable ausente; downlink continua ativo. Para instalar, use '
+               '--install-cable ou https://vb-audio.com/Cable/')
+    if install:
+        import webbrowser
+        (opener or webbrowser.open)('https://vb-audio.com/Cable/')
+    return message

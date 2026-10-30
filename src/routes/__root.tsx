@@ -78,15 +78,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Workspace" },
+      { title: "ApexAudio — o som do PC, no fone do celular" },
       {
         name: "description",
-        content: "Ambiente pronto para iniciar um novo projeto.",
+        content:
+          "Ouça o PC no fone do celular pelo cabo USB e fale pelo microfone do celular no PC. Sem Wi-Fi, sem driver na mão, sem compilar nada.",
       },
-      { property: "og:title", content: "Workspace" },
+      { property: "og:title", content: "ApexAudio — o som do PC, no fone do celular" },
       {
         property: "og:description",
-        content: "Ambiente pronto para iniciar um novo projeto.",
+        content:
+          "Ouça o PC no fone do celular pelo cabo USB e fale pelo microfone do celular no PC. Sem Wi-Fi, sem driver na mão, sem compilar nada.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

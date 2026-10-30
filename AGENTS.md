@@ -15,8 +15,9 @@
 
 ## ApexAudio (apexaudio/)
 - O contrato de rede ABP vive em `apexaudio/docs/protocol.md` (host Python = referência; Protocol.kt deve ser byte-a-byte idêntico). Qualquer mudança de framing passa por lá e pelos testes de paridade.
-- O túnel ADB usa `adb reverse` nas duas portas (59900 e 59901) porque o celular é o cliente TCP das duas — nunca reintroduzir `adb forward` para 59900 (Decisão D1 do PRD).
 - O host degrada graciosamente sem WASAPI/VB-Cable (túnel permanece de pé); gates de rede vivos em /tmp/test_fase2_server.py — rodar antes de declarar integração completa.
+- D2-1 (ApexAudio 2, N=2): o host serve HTTP estático + WebSocket binário `/ws` na porta única 59900; o celular conecta via `adb reverse tcp:59900 tcp:59900` — não configurar reverse de 59901. Cada mensagem WS binária = 1 frame ABP completo; CONFIG_SYNC após o upgrade; pacing/heartbeat/dead-socket conforme `apexaudio/docs/protocol.md`. O TCP legado (Fase D1 do project1) fica só para compatibilidade/regressão, não roda no main de N=2.
+- Suítes de gates: Python `python3 -m unittest discover -s apexaudio/desktop_host/tests -t /dev-server` (independente de cwd) e JS `node --test apexaudio/web_client/tests/*.test.mjs` (não `node --test tests/`). Rodar as duas antes de declarar entrega no N=2.
 
 ## Arquitetura de monitoramento
 - O proxy do OpenCode expõe o runtime OpenCode na rota `/oc`. oculta nas rotas do app, só utilizar o runtime OpenCode

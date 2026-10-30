@@ -2,12 +2,13 @@
 
 Uso:
     python -m desktop_host.main            (modo automático: ADB ou LAN)
-    python -m desktop_host.main --lan      (força escuta LAN 0.0.0.0)
+    python -m desktop_host.main --install-cable  (oferece a instalação do VB-Cable)
 
 Dashboard CLI ANSI conforme PRD §8.2. Encerrar com Ctrl+C.
 """
 from __future__ import annotations
 
+import asyncio
 import argparse
 import shutil
 import sys
@@ -16,8 +17,9 @@ import time
 
 from . import adb_manager, config, protocol
 from .audio_capture import LoopbackCapture, open_loopback_capture
-from .audio_sink import UplinkSink
-from .network_server import AudioServer, HostStats
+from .audio_sink import UplinkSink, offer_cable_install
+from .network_server import HostStats
+from .ws_server import WsBridgeServer
 
 BANNER = "=" * 60
 
@@ -31,7 +33,7 @@ def render_dashboard(stats: HostStats, capture: LoopbackCapture, sink: UplinkSin
     snap = stats.snapshot()
     device_line = (
         f"Device detected ({adb.device_serial}) -> Ports "
-        f"{config.PORT_DOWNLINK}/{config.PORT_UPLINK} Routed."
+        f"{config.PORT_DOWNLINK} HTTP+WS Routed."
         if adb.available and adb.downlink_reverse_ok and adb.reverse_ok
         else f"LAN mode listening on {bind} "
              f"(IP: {adb_manager.local_ip() or 'desconhecido'})")
@@ -50,39 +52,50 @@ def render_dashboard(stats: HostStats, capture: LoopbackCapture, sink: UplinkSin
     )
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="ApexAudio Host Server")
-    parser.add_argument("--lan", action="store_true",
-                        help="força escuta em 0.0.0.0 (padrão: automático)")
-    args = parser.parse_args(argv)
-
+async def run(args):
     stats = HostStats()
     capture = open_loopback_capture()
     sink = UplinkSink()
-    sink.start()
-    capture.start()
-
-    adb = adb_manager.detect_device()
-    bind_lan = args.lan or not (adb.available and adb.device_serial)
-    server = AudioServer(capture.read_chunk, sink, bind_lan=bind_lan, stats=stats)
-    server.start()
-    print(render_dashboard(stats, capture, sink, adb,
-                           "0.0.0.0" if bind_lan else "127.0.0.1"))
+    server = None
     try:
+        sink.start()
+        capture.start()
+        print(offer_cable_install(sink.device_index, args.install_cable))
+        try:
+            executable = await asyncio.to_thread(adb_manager.locate)
+        except RuntimeError as exc:
+            print(exc)
+            executable = 'adb'
+        manager = adb_manager.AdbManager(executable)
+        adb = await asyncio.to_thread(manager.poll)
+        # Bind local (D2-6): o celular alcança o host via adb reverse para o
+        # 127.0.0.1 do PC; replug re-aplica o reverse (manager.poll), sem rebind.
+        bind = '127.0.0.1'
+        server = WsBridgeServer(chunk_source=lambda: capture.read_chunk(timeout=0),
+                                sink=sink, host=bind, stats=stats)
+        await server.start()
         while True:
-            time.sleep(4.0)
-            print(render_dashboard(stats, capture, sink, adb,
-                                   "0.0.0.0" if bind_lan else "127.0.0.1"),
-                  end="\r", flush=True)
-    except KeyboardInterrupt:
-        pass
+            print(render_dashboard(stats, capture, sink, adb, bind), flush=True)
+            await asyncio.sleep(2)
+            adb = await asyncio.to_thread(manager.poll)
     finally:
-        server.stop()
+        if server:
+            await server.stop()
         capture.stop()
         sink.stop()
-        print("\n[ApexAudio] servidor encerrado.")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='ApexAudio HTTP+WS :59900')
+    parser.add_argument('--lan', action='store_true', help='escuta LAN (também padrão automático)')
+    parser.add_argument('--install-cable', action='store_true', help='abre download oficial do VB-Cable')
+    args = parser.parse_args(argv)
+    try:
+        asyncio.run(run(args))
+    except KeyboardInterrupt:
+        pass
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

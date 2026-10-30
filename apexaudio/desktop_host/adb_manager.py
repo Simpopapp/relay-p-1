@@ -1,12 +1,4 @@
-"""ApexAudio — gerenciamento automático do túnel ADB (PRD §4.3).
-
-Se houver um dispositivo Android plugado em modo `device`, configura:
-    adb reverse tcp:59900 tcp:59900   (o celular alcança o downlink do PC)
-    # Decisão D1: o celular inicia conexões nas duas portas.
-    adb reverse tcp:59901 tcp:59901   (o celular entrega o uplink no PC)
-Sem ADB no PATH ou sem dispositivo, o host recai para LAN 0.0.0.0 e mostra o
-IP local no console.
-"""
+"""ADB discovery, single-port reverse and reconnect management."""
 from __future__ import annotations
 
 import re
@@ -37,26 +29,6 @@ def _run_adb(*args: str) -> tuple[int, str]:
         return -2, "adb não respondeu em 10s"
 
 
-def detect_device() -> AdbStatus:
-    code, out = _run_adb("devices")
-    if code != 0:
-        return AdbStatus(False, None, False, False, out)
-    serials = re.findall(r"^(\S+)\tdevice\b", out, flags=re.MULTILINE)
-    if not serials:
-        return AdbStatus(True, None, False, False,
-                         "ADB presente, nenhum dispositivo em modo 'device'")
-    serial = serials[0]
-    # O celular é o cliente TCP das DUAS portas (PRD §6): `adb reverse` faz o
-    # localhost do celular alcançar o host (Decisão D1 do PRD central).
-    downlink_code, downlink_out = _run_adb("-s", serial, "reverse",
-                                 f"tcp:{config.PORT_DOWNLINK}", f"tcp:{config.PORT_DOWNLINK}")
-    rev_code, rev_out = _run_adb("-s", serial, "reverse",
-                                 f"tcp:{config.PORT_UPLINK}", f"tcp:{config.PORT_UPLINK}")
-    ok = downlink_code == 0 and rev_code == 0
-    return AdbStatus(True, serial, downlink_code == 0, rev_code == 0,
-                     f"device {serial}" if ok else f"reverse nas duas portas falhou: {downlink_out} {rev_out}")
-
-
 def local_ip() -> str | None:
     """IP LAN do host (trick de rota UDP — não envia nada de fato)."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,3 +39,82 @@ def local_ip() -> str | None:
         return None
     finally:
         sock.close()
+
+import shutil
+import os
+from pathlib import Path
+import urllib.request
+import zipfile
+import tempfile
+
+TOOLS_URL = 'https://dl.google.com/android/repository/platform-tools-latest-windows.zip'
+
+
+def locate(local_dir=None, download=True, url=TOOLS_URL, downloader=None):
+    """PATH -> local platform-tools -> official ZIP. Never silently ignore failure."""
+    found = shutil.which('adb')
+    if found:
+        return found
+    root = Path(local_dir) if local_dir else Path.home() / '.apexaudio'
+    exe = root / 'platform-tools' / ('adb.exe' if os.name == 'nt' else 'adb')
+    if exe.is_file():
+        return str(exe)
+    if not download:
+        raise RuntimeError('ADB ausente no PATH e pasta local; habilite download com rede.')
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / 'tools.zip'
+            (downloader or urllib.request.urlretrieve)(url, archive)
+            with zipfile.ZipFile(archive) as z:
+                # Extract only platform-tools files and reject path traversal.
+                for info in z.infolist():
+                    dest = (root / info.filename).resolve()
+                    if not dest.is_relative_to(root.resolve()) or not info.filename.startswith('platform-tools/'):
+                        raise ValueError('ZIP ADB inseguro')
+                z.extractall(root)
+        if not exe.is_file():
+            raise ValueError('ZIP sem executável ADB para este sistema')
+        exe.chmod(exe.stat().st_mode | 0o100)
+        return str(exe)
+    except Exception as exc:
+        raise RuntimeError(f'Não foi possível instalar ADB; verifique rede: {exc}') from exc
+
+
+class AdbManager:
+    def __init__(self, executable='adb', runner=None):
+        self.executable = executable
+        self.runner = runner or self._run
+        self._configured = None
+        self.status = AdbStatus(False, None, False, False, 'Aguardando ADB')
+
+    def _run(self, *args):
+        try:
+            p = subprocess.run([self.executable, *args], capture_output=True, text=True, timeout=10)
+            return p.returncode, (p.stdout + p.stderr).strip()
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return -1, str(exc)
+
+    def poll(self):
+        code, out = self.runner('devices')
+        serials = re.findall(r'^(\S+)\s+device\b', out, re.MULTILINE) if code == 0 else []
+        serial = serials[0] if serials else None
+        if not serial:
+            self._configured = None
+            self.status = AdbStatus(code == 0, None, False, False, out)
+        elif serial != self._configured:
+            code, out = self.runner('-s', serial, 'reverse', 'tcp:59900', 'tcp:59900')
+            opened = False
+            if code == 0:
+                launch, message = self.runner('-s', serial, 'shell', 'am', 'start', '-a',
+                    'android.intent.action.VIEW', '-d', 'http://localhost:59900')
+                opened = launch == 0
+                if not opened: out = message
+            self._configured = serial if code == 0 and opened else None
+            self.status = AdbStatus(True, serial, code == 0, code == 0,
+                'Túnel :59900 ativo; página aberta' if opened else out)
+        return self.status
+
+
+def detect_device():
+    return AdbManager().poll()
