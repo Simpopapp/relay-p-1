@@ -28,8 +28,8 @@
 ## Vetores de paridade (byte-exatos — os testes devem asserir exatamente)
 - PING   seq=1 ts=1000: `55 aa 02 00 01 00 00 00 e8 03 00 00 00 00 00 00`
 - PONG   seq=1 ts=1000: `55 aa 03 00 01 00 00 00 e8 03 00 00 00 00 00 00`
-- CONFIG_SYNC sample=48000 ch=2 fb=1920 seq=7:
-  `55 aa 04 00 07 00 00 00 00 00 00 00 07 00 00 00 80 bb 00 00 02 80 07`
+- CONFIG_SYNC sample=48000 ch=2 fb=1920 seq=7 ts=1000:
+  `55 aa 04 00 07 00 00 00 e8 03 00 00 07 00 00 00 80 bb 00 00 02 80 07`
 - ÁUDIO downlink seq=42 ts=0, payload 1920 bytes: header
   `55 aa 01 00 2a 00 00 00 00 00 00 00 80 07 00 00` + 1920 bytes.
 - ÁUDIO uplink seq=1 ts=0, payload 960 zero bytes: header
