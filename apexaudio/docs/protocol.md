@@ -43,3 +43,21 @@ Qualquer divergência entre as duas implementações é bug; o Python é a refer
    envios. Até três ticks de atraso, os slots vencidos são consumidos sem
    rajada de frames; acima disso, a base é ressincronizada e os ticks perdidos
    são descartados. Fonte seca envia silêncio na mesma cadência.
+
+## Transporte WS
+
+ApexAudio 2 usa HTTP estático e WebSocket binário `/ws` na mesma porta **59900**.
+Cada mensagem binária contém exatamente um frame ABP completo (16B + payload);
+fragmentação WS é remontada pelo transporte, não por `feed_stream`. Frames
+inválidos, mensagens concatenadas e uplink fora de 960B são rejeitados.
+O host envia CONFIG_SYNC (48000 Hz, 2 canais, 1920B) imediatamente após upgrade.
+O uplink é mono, canal 0x01, 960B; downlink canal 0x00, 1920B a cada 10ms,
+inclusive silêncio com fonte seca. Somente o primeiro cliente consome a captura;
+os demais recebem silêncio e são promovidos quando o primeiro desconecta.
+
+PING ABP a cada 1000ms, independentemente do áudio (regra 2 canônica); PONG
+ecoa sequência e timestamp e conta como pacote recebido. Após 3000ms sem
+frame ABP completo válido RECEBIDO do cliente, a sessão é encerrada, mesmo
+com áudio sendo enviado. WebSocket PONG nativo não substitui PONG ABP.
+O cliente reconecta com backoff 500/1000/2000ms, teto 5000ms, limpando buffers.
+O túnel USB exige somente `adb reverse tcp:59900 tcp:59900`.
