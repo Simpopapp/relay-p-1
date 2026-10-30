@@ -41,4 +41,4 @@ Pronto para Fase 4: host WS completo e testado; web_client estático servível p
 - [ ] Teste real em hardware: latência medida, Discord recebendo voz (blocker externo: usuário).
 
 ## Próximo remix
-Começar pela Fase 1 + Fase 2 (resolvem o preview vazio e já mostram o produto).
+(Esta linha foi substituída — ver seção "Próximo remix" ao final da Fase 3.)
