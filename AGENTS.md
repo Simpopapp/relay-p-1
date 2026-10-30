@@ -36,4 +36,4 @@ Can you help me with the following actions:
 ## Arquitetura e Ambiente
 null
 ## Verificação e Qualidade
-null
+- Test exact sender pacing with a fake clock, never TCP receive gaps: OS buffering and Windows timer resolution can batch arrivals without a sender defect.

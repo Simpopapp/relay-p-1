@@ -180,13 +180,13 @@ class TestAudioServer(unittest.TestCase):
             if frame.packet_type == config.PACKET_AUDIO:
                 arrivals.append(time.monotonic())
         elapsed = time.monotonic() - start
-        gaps = [b - a for a, b in zip(arrivals, arrivals[1:])]
         print(f"\nPACING frames={len(arrivals)} elapsed={elapsed:.4f}s "
-              f"rate={len(arrivals)/elapsed:.2f}/s min_gap={min(gaps)*1000:.3f}ms")
+              f"rate={len(arrivals)/elapsed:.2f}/s")
         # Windows CI timers can oversleep; verify throttling by elapsed rate.
         rate = len(arrivals) / elapsed
         self.assertTrue(70 <= rate <= 125, rate)
-        self.assertGreaterEqual(min(gaps), 0.005)
+        # TCP may deliver several correctly paced frames in one receive call.
+        # Exact send spacing is verified with a fake clock in test_pacing.py.
 
     def assert_dead_session(self, port: int, stat: str, handshake=False) -> None:
         start = time.monotonic()

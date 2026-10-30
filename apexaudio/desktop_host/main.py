@@ -89,7 +89,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='ApexAudio HTTP+WS :59900')
     parser.add_argument('--lan', action='store_true', help='escuta LAN (também padrão automático)')
     parser.add_argument('--install-cable', action='store_true', help='abre download oficial do VB-Cable')
+    parser.add_argument('--self-test', action='store_true', help='verifica HTTP/WS e arquivos sem USB ou downloads')
     args = parser.parse_args(argv)
+    if args.self_test:
+        from .self_test import run_self_test
+        asyncio.run(run_self_test())
+        return 0
     try:
         asyncio.run(run(args))
     except KeyboardInterrupt:
