@@ -36,4 +36,5 @@ Can you help me with the following actions:
 ## Arquitetura e Ambiente
 null
 ## Verificação e Qualidade
-- Test exact sender pacing with a fake clock, never TCP receive gaps: OS buffering and Windows timer resolution can batch arrivals without a sender defect.
+- Test exact sender pacing with a fake clock, never TCP receive gaps: OS buffering and Windows timer resolution can batch arrivals without a sender defect.- Host static files are served from memory with an explicit MIME map: Windows registry can map .js to text/plain (breaks worklets) and open handles block temp cleanup.
+- CI publishes only after the packaged exe passes `ApexAudio.exe --self-test`; keep that step whenever the workflow changes.

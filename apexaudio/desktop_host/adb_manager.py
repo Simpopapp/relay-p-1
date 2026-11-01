@@ -65,7 +65,11 @@ def locate(local_dir=None, download=True, url=TOOLS_URL, downloader=None):
         root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / 'tools.zip'
-            (downloader or urllib.request.urlretrieve)(url, archive)
+            if downloader:
+                downloader(url, archive)
+            else:
+                with urllib.request.urlopen(url, timeout=30) as resp, open(archive, 'wb') as out:
+                    shutil.copyfileobj(resp, out)
             with zipfile.ZipFile(archive) as z:
                 # Extract only platform-tools files and reject path traversal.
                 for info in z.infolist():

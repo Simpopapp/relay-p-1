@@ -20,14 +20,17 @@ class TestLoopbackCapture(unittest.TestCase):
         names = []
         capture = LoopbackCapture(thread_initializer=lambda: names.append(
             threading.current_thread().name))
-        try:
-            capture.start()
-            deadline = time.monotonic() + 2
-            while not names and time.monotonic() < deadline:
-                time.sleep(0.01)
-            self.assertEqual(names, ["apex-audio-capture"])
-        finally:
-            capture.stop()
+        # Never touch real WASAPI hardware in tests (CI has no sound card).
+        with patch("apexaudio.desktop_host.audio_capture._wasapi_frames",
+                   side_effect=CaptureUnavailable("no test device")):
+            try:
+                capture.start()
+                deadline = time.monotonic() + 5
+                while not names and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertEqual(names, ["apex-audio-capture"])
+            finally:
+                capture.stop()
 
     def test_initializer_exception_is_swallowed(self):
         def fail():
