@@ -7,6 +7,19 @@ from aiohttp import web, WSMsgType
 from . import config, protocol
 from .network_server import HostStats
 
+MIME_TYPES = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.mjs': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json',
+    '.webmanifest': 'application/manifest+json',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.ico': 'image/x-icon',
+    '.txt': 'text/plain; charset=utf-8',
+}
+
 
 class WsBridgeServer:
     def __init__(self, port=59900, web_dir=None, chunk_source=None, sink=None,
@@ -44,7 +57,13 @@ class WsBridgeServer:
         path = (root / (request.match_info['path'] or 'index.html')).resolve()
         if not path.is_relative_to(root) or not path.is_file():
             raise web.HTTPNotFound()
-        return web.FileResponse(path)
+        # Read into memory (files are tiny) so no handle stays open on Windows,
+        # and use an explicit MIME map: the Windows registry may report .js as
+        # text/plain, which Chrome rejects for module scripts and worklets.
+        body = await asyncio.to_thread(path.read_bytes)
+        ctype = MIME_TYPES.get(path.suffix.lower(), 'application/octet-stream')
+        headers = {'Cache-Control': 'no-cache'}
+        return web.Response(body=body, headers={**headers, 'Content-Type': ctype})
 
     async def _ws(self, request):
         ws = web.WebSocketResponse(max_msg_size=4096, autoping=True)

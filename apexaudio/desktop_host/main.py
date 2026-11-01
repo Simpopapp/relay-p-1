@@ -58,7 +58,14 @@ async def run(args):
     sink = UplinkSink()
     server = None
     try:
-        sink.start()
+        try:
+            sink.start()
+        except Exception as exc:  # VB-Cable presente mas inutilizável
+            sink.stop()
+            sink.device_index = None
+            sink.warnings.append(f"VB-Cable indisponível: {exc}")
+        for warning in sink.warnings:
+            print(warning, flush=True)
         capture.start()
         print(offer_cable_install(sink.device_index, args.install_cable))
         try:
@@ -67,13 +74,14 @@ async def run(args):
             print(exc)
             executable = 'adb'
         manager = adb_manager.AdbManager(executable)
-        adb = await asyncio.to_thread(manager.poll)
         # Bind local (D2-6): o celular alcança o host via adb reverse para o
         # 127.0.0.1 do PC; replug re-aplica o reverse (manager.poll), sem rebind.
         bind = '127.0.0.1'
         server = WsBridgeServer(chunk_source=lambda: capture.read_chunk(timeout=0),
                                 sink=sink, host=bind, stats=stats)
         await server.start()
+        # Só depois do servidor no ar: o poll abre a página no celular.
+        adb = await asyncio.to_thread(manager.poll)
         while True:
             print(render_dashboard(stats, capture, sink, adb, bind), flush=True)
             await asyncio.sleep(2)
