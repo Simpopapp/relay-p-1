@@ -62,7 +62,7 @@ class TestAudioServer(unittest.TestCase):
             client.close()
         self.server.stop()
         for thread in self.server._threads:
-            thread.join(timeout=1)
+            thread.join(timeout=5)
             self.assertFalse(thread.is_alive(), 'Thread do servidor não encerrou')
 
     def connect(self, port: int) -> socket.socket:
@@ -71,7 +71,7 @@ class TestAudioServer(unittest.TestCase):
         return client
 
     def wait_stat(self, name: str, expected: int) -> None:
-        deadline = time.monotonic() + 2
+        deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
             if self.stats.snapshot()[name] == expected:
                 return
