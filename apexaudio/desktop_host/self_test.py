@@ -25,6 +25,8 @@ async def run_self_test():
                 async with client.get(f"{url}/{asset}") as response:
                     if response.status != 200 or not await response.read():
                         raise RuntimeError(f"Bundled asset missing: {asset}")
+                    if asset.endswith(".js") and not response.content_type.endswith("javascript"):
+                        raise RuntimeError(f"Wrong MIME for {asset}: {response.content_type}")
             async with client.ws_connect(url + "/ws") as ws:
                 msg = await ws.receive(timeout=5)
                 if msg.type != WSMsgType.BINARY:

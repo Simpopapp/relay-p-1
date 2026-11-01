@@ -78,6 +78,10 @@ class TestWS(unittest.IsolatedAsyncioTestCase):
         Path(self.tmp.name, 'index.html').write_text('bridge')
         async with self.client.get(self.url) as r:
             self.assertEqual(r.status, 200); self.assertEqual(await r.text(), 'bridge')
+        Path(self.tmp.name, 'app.js').write_text('x')
+        async with self.client.get(self.url + '/app.js') as r:
+            # Chrome rejects worklets/modules unless served as JavaScript.
+            self.assertEqual(r.content_type, 'text/javascript')
         self.server.web_dir = Path(self.tmp.name) / 'missing'
         async with self.client.get(self.url) as r: self.assertEqual(r.status, 404)
     async def test_multiple_and_promotion(self):
