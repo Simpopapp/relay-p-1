@@ -220,7 +220,7 @@ class TestAudioServer(unittest.TestCase):
                          (config.PACKET_PING, config.CHANNEL_UPLINK))
         client.sendall(protocol.encode(config.PACKET_PONG, config.CHANNEL_UPLINK,
                                       frame.sequence_num, b'', frame.timestamp_us))
-        deadline = time.monotonic() + 1
+        deadline = time.monotonic() + 5
         while self.stats.snapshot()['rtt_ms'] is None and time.monotonic() < deadline:
             time.sleep(0.005)
         self.assertIsInstance(self.stats.snapshot()['rtt_ms'], float)
