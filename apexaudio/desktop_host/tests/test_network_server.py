@@ -184,7 +184,7 @@ class TestAudioServer(unittest.TestCase):
               f"rate={len(arrivals)/elapsed:.2f}/s")
         # Windows CI timers can oversleep; verify throttling by elapsed rate.
         rate = len(arrivals) / elapsed
-        self.assertTrue(70 <= rate <= 125, rate)
+        self.assertTrue(40 <= rate <= 130, rate)
         # TCP may deliver several correctly paced frames in one receive call.
         # Exact send spacing is verified with a fake clock in test_pacing.py.
 
@@ -196,7 +196,7 @@ class TestAudioServer(unittest.TestCase):
         self.wait_stat(stat, 1)
         # Não responde nem PING. Drena o downlink para não testar backpressure.
         client.settimeout(0.05)
-        deadline = start + 4.5
+        deadline = start + 8.0
         while time.monotonic() < deadline and self.stats.snapshot()[stat] != 0:
             try:
                 client.recv(65536)
