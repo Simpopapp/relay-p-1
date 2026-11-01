@@ -9,9 +9,15 @@ on:
 permissions:
   contents: write
 
+# Two quick pushes must not race while publishing the same release.
+concurrency:
+  group: build-exe-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -23,18 +29,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r apexaudio/desktop_host/requirements.txt
-          pip install pyinstaller
+          pip install "pyinstaller>=6.3,<7"
 
       - name: Testes do host
+        timeout-minutes: 10
         run: python -m unittest discover -s apexaudio/desktop_host/tests -t .
 
       - name: Compilar ApexAudio.exe
         run: >
-          pyinstaller --onefile --console --name ApexAudio
+          pyinstaller --noconfirm --onefile --console --name ApexAudio
           --paths .
           --add-data "apexaudio/web_client;web_client"
           --collect-submodules apexaudio.desktop_host
           apexaudio/run_host.py
+
+      # Runs the packaged exe itself: catches missing modules/DLLs or web files
+      # before anything is published. No phone, USB or download needed.
+      - name: Testar o ApexAudio.exe gerado
+        timeout-minutes: 3
+        run: .\dist\ApexAudio.exe --self-test
 
       - uses: actions/upload-artifact@v4
         with:
@@ -47,5 +60,5 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
           name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'ApexAudio (última versão)' }}
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          make_latest: true
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
           files: dist/ApexAudio.exe

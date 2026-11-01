@@ -61,7 +61,10 @@ async def run(args):
         try:
             sink.start()
         except Exception as exc:  # VB-Cable presente mas inutilizável
-            sink.stop()
+            try:
+                sink.stop()
+            except Exception:
+                sink._stream = None
             sink.device_index = None
             sink.warnings.append(f"VB-Cable indisponível: {exc}")
         for warning in sink.warnings:
